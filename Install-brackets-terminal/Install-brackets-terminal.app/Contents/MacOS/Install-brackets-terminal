@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+osascript -e 'tell app "System Events" to display dialog "This will install brackets-terminal"'
+afplay /System/Library/Sounds/Ping.aiff
+osascript -e 'tell app "System Events" to display notification "Okay sit tight while I do this." with title "Installing..."'
+
+TTY="$(which tty.js)"
+NPM="$(which npm)"
+NODE="$(which node)"
+BREW="$(which brew)"
+# npm install -g tty.js
+
+osascript -e 'tell app "System Events" to display notification "Im still workin on it." with title "Still installing..."'
+
+
+if [[ -z $TTY ]]; then 
+	if [[ -z $NPM ]] || [[ -z $NODE ]]; then 
+		if [[ -z $BREW ]]; then 
+			# osascript -e 'System Events" to display dialog "Homebrew required. Install?"'
+			# say Homebrew required. Install?
+			ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+			export PATH="/usr/local/bin:$PATH"
+		fi
+		brew update
+		# osascript -e 'System Events" to display dialog "Node required. Install?"'
+		# say Node required. Install?
+		brew install node
+	fi
+osascript -e 'tell app "System Events" to display notification "Im gonna need you do chill for a bit." with title "Still installing..."'
+	# osascript -e 'System Events" to display dialog "tty.js required. Install?"'
+	# say tty.js required. Install?
+	npm install -g tty.js
+fi
+
+osascript -e 'tell app "System Events" to display notification "Relax!!!!!" with title "Still installing..."'
+
+ORIG='/Applications/Brackets.app/Contents';
+TMP="$HOME/Desktop/Brackets.app/Contents";
+
+# make directory structure for fake Brackets.app:
+mkdir -p ~/Desktop/Brackets.app/{Contents/MacOS,Contents/Resources};
+# add some small files:
+cp "$ORIG/Resources/appshell.icns" "$TMP/Resources/";
+echo "APPL????" >> "$TMP/PkgInfo"
+
+# script for fake Brackets that starts tty.js and opens real Brackets.app:
+EXEC="$TMP/MacOS/Brackets"; > "$EXEC"; chmod +x "$EXEC"
+echo '#!/usr/bin/env bash' >> "$EXEC"
+echo 'osascript <<END ' >> "$EXEC"
+echo 'tell application "Terminal"' >> "$EXEC"
+echo '    do script "cd \"`pwd`\";/usr/local/bin/tty.js;exit"' >> "$EXEC"
+echo 'end tell' >> "$EXEC"
+echo 'END' >> "$EXEC"
+echo 'open /Applications/.Brackets.app' >> "$EXEC"
+
+# make Info.plist:
+IPL="$TMP/Info.plist"
+echo '' > "$IPL" 
+echo '<?xml version="1.0" encoding="UTF-8"?>' >> "$IPL" 
+echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> "$IPL"
+echo '<plist version="1.0">' >> "$IPL" 
+echo '<dict>' >> "$IPL" 
+echo '	<key>CFBundleExecutable</key>' >> "$IPL" 
+echo '	<string>Brackets</string>' >> "$IPL" 
+echo '	<key>CFBundleIconFile</key>' >> "$IPL" 
+echo '	<string>appshell.icns</string>' >> "$IPL" 
+echo '	<key>CFBundleInfoDictionaryVersion</key>' >> "$IPL" 
+echo '	<string>1.0</string>' >> "$IPL" 
+echo '	<key>CFBundlePackageType</key>' >> "$IPL" 
+echo '	<string>APPL</string>' >> "$IPL" 
+echo '	<key>CFBundleSignature</key>' >> "$IPL" 
+echo '	<string>????</string>' >> "$IPL" 
+echo '	<key>CFBundleVersion</key>' >> "$IPL" 
+echo '	<string>1.0</string>' >> "$IPL" 
+echo '</dict>' >> "$IPL" 
+echo '</plist>' >> "$IPL" 
+
+
+# partially undo any previous install:
+if [ -d /Applications/.Brackets.app ] || [ -d /Applications/Brackets.app ] ; then
+	rm -rf /Applications/Brackets.app
+else
+	# Hide the real Brackets.app:
+	mv /Applications/Brackets.app /Applications/.Brackets.app
+fi
+
+# Move the fake one to the real ones old place:
+mv "$HOME/Desktop/Brackets.app" /Applications
+afplay /System/Library/Sounds/Glass.aiff
+osascript -e 'tell app "System Events" to display notification "Okay all done." with title "DONE"'
+osascript -e 'tell app "System Events" to display dialog "Installation Complete!"'

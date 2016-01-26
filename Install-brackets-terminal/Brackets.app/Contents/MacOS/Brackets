@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+osascript <<END 
+tell application "Terminal"
+    do script "cd \"`pwd`\";/usr/local/bin/tty.js;exit"
+end tell
+END
+open /Applications/.Brackets.app
